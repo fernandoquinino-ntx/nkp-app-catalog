@@ -1,0 +1,4 @@
+# Source for `check-versions`: the chart is pulled from this Helm repo, then pushed to OCI.
+helmrepo: hashicorp/vault
+helmrepoUrl: https://helm.releases.hashicorp.com
+ocipush: oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog

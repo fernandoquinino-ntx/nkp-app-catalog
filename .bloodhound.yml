@@ -1,0 +1,22 @@
+# .bloodhound.yml — configuration for `nkp validate catalog-repository`.
+#
+# Kubernetes version(s) used for schema validation (must match a yannh/kubernetes-json-schema version).
+k8s_versions:
+  - 1.34.0
+
+# reject unknown fields in resources
+strict: true
+
+# types whose CRDs are not loaded at validation time (rendered/owned by controllers at runtime)
+skip_types:
+  - source.toolkit.fluxcd.io/v1/OCIRepository
+  - helm.toolkit.fluxcd.io/v2/HelmRelease
+  - kustomize.toolkit.fluxcd.io/v1/Kustomization
+
+# extra CRD yaml URLs to load (none needed)
+additional_crds: []
+
+# values for substitution variables used in the manifests
+substitution_vars:
+  releaseNamespace: kommander
+  workspaceNamespace: workspace

@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${releaseName}-config-defaults
+  namespace: ${releaseNamespace}
+data:
+  values.yaml: |
+    # HashiCorp Vault — HA Raft defaults.
+    # TLS is OFF here (chart default) for portability; enable it with a `tls` extraVolume +
+    # listener config when you have a server certificate. See the Vault Helm chart docs.
+    global:
+      enabled: true
+    server:
+      standalone:
+        enabled: false
+      ha:
+        enabled: true
+        replicas: 3            # true HA; set to 1 for a single-node lab
+        raft:
+          enabled: true
+          setNodeId: true
+      dataStorage:
+        enabled: true
+        size: 10Gi             # uses the cluster default StorageClass; set storageClass to override
+      ui:
+        enabled: true
+    ui:
+      enabled: true
+    injector:
+      enabled: true            # External Secrets Operator users can set this to false
+    csi:
+      enabled: false

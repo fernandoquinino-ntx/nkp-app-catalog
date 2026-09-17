@@ -1,0 +1,115 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  validate:
+    name: Validate catalog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Validate catalog structure
+        run: |
+          set -e
+          [ -d applications ] || { echo "missing applications/"; exit 1; }
+          fail=0
+          for ver_dir in applications/*/*/ ; do
+            [ -d "$ver_dir" ] || continue
+            echo "== $ver_dir"
+            for f in metadata.yaml kustomization.yaml helmrelease.yaml; do
+              if [ -f "${ver_dir}${f}" ]; then echo "   ok  $f"; else echo "   MISSING $f"; fail=1; fi
+            done
+            [ -d "${ver_dir}helmrelease" ] && echo "   ok  helmrelease/" || { echo "   MISSING helmrelease/"; fail=1; }
+          done
+          exit $fail
+
+      - name: Validate YAML syntax
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            yq e '.' "$f" >/dev/null 2>&1 || { echo "invalid YAML: $f"; fail=1; }
+          done < <(find applications .github -type f \( -name '*.yaml' -o -name '*.yml' \))
+          exit $fail
+
+      - name: Validate metadata.yaml schema + required fields
+        run: |
+          fail=0
+          while IFS= read -r m; do
+            echo "== $m"
+            s=$(yq e '.schema' "$m")
+            [ "$s" = "catalog.nkp.nutanix.com/v1/application-metadata" ] || { echo "  bad schema: $s"; fail=1; }
+            d=$(yq e '.displayName' "$m"); [ -n "$d" ] && [ "$d" != "null" ] || { echo "  missing displayName"; fail=1; }
+            o=$(yq e '.overview' "$m");   [ -n "$o" ] && [ "$o" != "null" ] || echo "  warn: missing overview"
+          done < <(find applications -name metadata.yaml)
+          exit $fail
+
+      - name: nkp validate catalog-repository (optional)
+        if: ${{ vars.NKP_BINARY_URL != '' }}
+        run: |
+          curl -fsSL -o /usr/local/bin/nkp "${{ vars.NKP_BINARY_URL }}"
+          chmod +x /usr/local/bin/nkp
+          nkp validate catalog-repository --repo-dir=.
+
+  publish:
+    name: Build + push bundle
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+
+      - name: Install nkp
+        if: ${{ vars.NKP_BINARY_URL != '' }}
+        run: |
+          curl -fsSL -o /usr/local/bin/nkp "${{ vars.NKP_BINARY_URL }}"
+          chmod +x /usr/local/bin/nkp
+          nkp version || true
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Push Vault chart to OCI
+        run: |
+          set -e
+          helm repo add hashicorp https://helm.releases.hashicorp.com >/dev/null
+          helm repo update >/dev/null
+          helm pull hashicorp/vault --version 0.34.1
+          helm push vault-0.34.1.tgz oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog
+
+      - name: Build + push catalog bundle (optional)
+        if: ${{ vars.NKP_BINARY_URL != '' }}
+        run: |
+          set -e
+          nkp create catalog-bundle --collection-tag "${GITHUB_REF_NAME}"
+          tar=$(ls -1 nkp-app-catalog-*.tar | head -1)
+          nkp push bundle "$tar" \
+            --to-registry oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog \
+            --to-registry-username "${{ github.actor }}" \
+            --to-registry-password "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Next step (register in NKP)
+        run: |
+          echo "Register the catalog in an NKP workspace:"
+          echo "  nkp create catalog-collection \\"
+          echo "    --url oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog/nkp-app-catalog/collection \\"
+          echo "    --tag ${GITHUB_REF_NAME} --workspace kommander-workspace"

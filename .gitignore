@@ -1,0 +1,13 @@
+# credentials / local config — never commit
+.env.local
+setup-credentials.sh
+*.local
+
+# build artifacts
+*.tar
+bundle/
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/

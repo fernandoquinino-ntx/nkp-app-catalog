@@ -1,0 +1,31 @@
+schema: catalog.nkp.nutanix.com/v1/application-metadata
+displayName: Vault
+allowMultipleInstances: false
+category:
+  - nkp-app-catalog
+  - security
+  - secrets
+  - infrastructure
+description: |
+  HashiCorp Vault secures, stores, and tightly controls access to tokens, passwords,
+  certificates, API keys, and other secrets. Deployed here in HA Raft mode with the UI
+  enabled, it provides encryption as a service, dynamic secrets, PKI, and audit logging.
+dependencies: []
+icon: https://raw.githubusercontent.com/hashicorp/vault/main/website/static/img/vault-symbol.svg
+licensing:
+  - Pro
+  - Ultimate
+overview: |
+  **What it is** — Vault is a secrets-management and encryption platform that centralizes secrets,
+  enforces fine-grained access policies, and produces audit logs for compliance.
+
+  **Highlights**
+  - **HA Raft** integrated storage (no external Consul/etcd required); Web UI enabled
+  - Dynamic secrets for databases/clouds/APIs, encryption-as-a-service (transit), Kubernetes auth
+  - PKI + ACME capable, audit logging, policy as code
+
+  **Documentation:** [Vault docs](https://developer.hashicorp.com/vault/docs) | **Project:** [hashicorp/vault](https://github.com/hashicorp/vault)
+scope:
+  - workspace
+supportLink: https://developer.hashicorp.com/vault/docs
+type: custom
