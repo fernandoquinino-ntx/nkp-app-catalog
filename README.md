@@ -63,7 +63,10 @@ applications/<app>/<version>/
 1. `nkp validate catalog-repository --repo-dir=.`
 2. `nkp create catalog-bundle --collection-tag <tag>` → `<repo>-<tag>.tar`
 3. `nkp push bundle <tar> --to-registry oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog --to-registry-username … --to-registry-password …`
-4. Make the GHCR packages **public** (container packages default private) so clusters pull without a secret.
+4. Make the GHCR packages **public** so clusters pull the catalog + chart **without a secret**.
+   ⚠ This is **UI-only** — GitHub's REST API has no endpoint to change a package's visibility:
+   repo → **Packages** → select the package → *Package settings* → **Change visibility → Public**
+   (run `scripts/make-packages-public.sh` to print the exact URLs). Until then, use a pull secret.
 5. `nkp create catalog-collection --url oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog/<repo>/collection --tag <tag> --workspace <ws>`
    — created in the `kommander` namespace it propagates to **all** workspaces.
 

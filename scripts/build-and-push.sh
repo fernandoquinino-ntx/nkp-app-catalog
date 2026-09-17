@@ -49,9 +49,9 @@ echo "== 4/4  push bundle =="
   --to-registry-password "$GHCR_PASSWORD"
 
 if [ "${MAKE_PUBLIC:-false}" = "true" ]; then
-  echo "== make GHCR packages public =="
+  echo "== GHCR package visibility (UI-only) =="
   GHCR_OWNER="${GHCR_USERNAME}" GHCR_PASSWORD="$GHCR_PASSWORD" "${REPO_DIR}/scripts/make-packages-public.sh" || \
-    echo "   (visibility change failed — set it manually in the GitHub package settings)"
+    echo "   (could not list packages; set visibility manually in the GitHub package settings)"
 fi
 
 echo

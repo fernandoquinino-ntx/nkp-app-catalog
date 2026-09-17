@@ -1,44 +1,50 @@
 #!/usr/bin/env bash
-# make-packages-public.sh — set this owner's GHCR container packages to public.
-# Container packages are PRIVATE by default; a cluster must be able to pull the catalog + charts.
-# Needs a token with write:packages (delete:packages helps for some visibility changes).
+# make-packages-public.sh — GHCR package visibility is UI-ONLY.
 #
-# Usage: GHCR_OWNER=<login> GHCR_PASSWORD=<pat> ./scripts/make-packages-public.sh [name-substring]
+# IMPORTANT: GitHub's REST API has NO endpoint to change a package's visibility
+# (the /user|/orgs|/users packages endpoints support only GET, DELETE and /restore).
+# Visibility must be set in the GitHub web UI, per package.
+#
+# This script lists this owner's container packages and prints the exact settings URL
+# to open. Set each to "Public" so clusters can pull the catalog + charts anonymously.
+#
+# Usage: GHCR_OWNER=<login> GHCR_PASSWORD=<PAT> ./scripts/make-packages-public.sh
 set -euo pipefail
 
 API="https://api.github.com"
 : "${GHCR_OWNER:?set GHCR_OWNER (github login/org)}"
-: "${GHCR_PASSWORD:?set GHCR_PASSWORD (PAT)}"
-FILTER="${1:-}"
+: "${GHCR_PASSWORD:?set GHCR_PASSWORD (PAT with read:packages)}"
 
-hdr=(-H "Authorization: token ${GHCR_PASSWORD}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+hdr=(-H "Authorization: token ${GHCR_PASSWORD}" -H "Accept: application/vnd.github+json")
 
-# user vs org endpoint
 owner_type="$(curl -s "${hdr[@]}" "$API/users/${GHCR_OWNER}" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("type",""))')"
 if [ "$owner_type" = "Organization" ]; then
-  LIST="$API/orgs/${GHCR_OWNER}/packages?package_type=container&per_page=100"
-  PATCH_BASE="$API/orgs/${GHCR_OWNER}/packages/container"
+  LIST_URL="$API/orgs/${GHCR_OWNER}/packages?package_type=container&per_page=100"
+  WEB_BASE="https://github.com/orgs/${GHCR_OWNER}/packages/container"
 else
-  LIST="$API/user/packages?package_type=container&per_page=100"
-  PATCH_BASE="$API/user/packages/container"
+  LIST_URL="$API/user/packages?package_type=container&per_page=100"
+  WEB_BASE="https://github.com/users/${GHCR_OWNER}/packages/container"
 fi
 
-echo ">> listing container packages for ${GHCR_OWNER} (${owner_type:-User})"
-names="$(curl -s "${hdr[@]}" "$LIST" | python3 -c 'import sys,json
-d=json.load(sys.stdin)
-[print(p["name"]) for p in d if isinstance(d,list)]')"
-[ -n "$names" ] || { echo "   (no packages found)"; exit 0; }
+echo ">> GHCR package visibility can only be changed in the GitHub UI (no REST API endpoint)."
+echo ">> Open each package below and set Visibility = Public:"
+echo
 
-rc=0
-while IFS= read -r name; do
-  [ -n "$name" ] || continue
-  [ -n "$FILTER" ] && case "$name" in *"$FILTER"*) ;; *) continue ;; esac
-  enc="$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1],safe=""))' "$name")"
-  code="$(curl -s -o /dev/null -w '%{http_code}' -X PATCH "${hdr[@]}" "$PATCH_BASE/$enc" -d '{"visibility":"public"}')"
-  case "$code" in
-    200|204) echo "   public : $name" ;;
-    *)       echo "   HTTP $code : $name  (set manually in GitHub → Packages → settings)"; rc=1 ;;
-  esac
-done <<< "$names"
+GHCR_OWNER="$GHCR_OWNER" WEB_BASE="$WEB_BASE" python3 - "$LIST_URL" "$GHCR_PASSWORD" <<'PY'
+import sys, os, json, urllib.request, urllib.parse
+list_url, pat = sys.argv[1], sys.argv[2]
+req = urllib.request.Request(list_url, headers={
+    "Authorization": "token " + pat, "Accept": "application/vnd.github+json"})
+try:
+    data = json.loads(urllib.request.urlopen(req, timeout=30).read())
+except Exception as e:
+    print("   (could not list packages:", e, ")"); raise SystemExit(0)
+web = os.environ["WEB_BASE"]
+for p in data:
+    name = p["name"]; enc = urllib.parse.quote(name, safe="")
+    print(f"   - {name}   (visibility = {p.get('visibility')})")
+    print(f"       {web}/{enc}/settings")
+PY
 
-exit $rc
+echo
+echo "   Or: repo → Packages → select package → Package settings → Change visibility → Public."
