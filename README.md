@@ -14,7 +14,7 @@ as a **catalog collection** (a Flux `OCIRepository` in a workspace).
 
 - [`nkp`](https://github.com/nutanix-cloud-native/nkp) CLI
 - [`helm`](https://helm.sh/docs/intro/install/) 3.8+
-- an OCI registry you can push to — this repo uses **GHCR**: `oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog`
+- an OCI registry you can push to — this repo uses **GHCR**: charts under `oci://ghcr.io/fernandoquinino-ntx/<chartdir>/<chart>`, the catalog collection under `oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog/collection`
 - a registry login (a PAT with `write:packages`), e.g. `helm registry login ghcr.io`
 
 ## Quick start
@@ -38,7 +38,7 @@ GHCR_USERNAME=<you> GHCR_PASSWORD=<PAT> ./catalog-workflow.sh build-push --tag v
 
 # Helm chart in a Helm repo -> pull + push to OCI first
 ./catalog-workflow.sh add-app --appname <name> --version <ver> \
-  --helmrepo <repo/chart> --ocipush oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog \
+  --helmrepo <repo/chart> --ocipush oci://ghcr.io/fernandoquinino-ntx/charts \
   [--helmrepo-url https://<helm-repo-url>]
 ```
 
@@ -62,12 +62,12 @@ applications/<app>/<version>/
 
 1. `nkp validate catalog-repository --repo-dir=.`
 2. `nkp create catalog-bundle --collection-tag <tag>` → `<repo>-<tag>.tar`
-3. `nkp push bundle <tar> --to-registry oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog --to-registry-username … --to-registry-password …`
+3. `nkp push bundle <tar> --to-registry oci://ghcr.io/fernandoquinino-ntx --to-registry-username … --to-registry-password …`
 4. Make the GHCR packages **public** so clusters pull the catalog + chart **without a secret**.
    ⚠ This is **UI-only** — GitHub's REST API has no endpoint to change a package's visibility:
    repo → **Packages** → select the package → *Package settings* → **Change visibility → Public**
    (run `scripts/make-packages-public.sh` to print the exact URLs). Until then, use a pull secret.
-5. `nkp create catalog-collection --url oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog/<repo>/collection --tag <tag> --workspace <ws>`
+5. `nkp create catalog-collection --url oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog/collection --tag <tag> --workspace <ws>`
    — created in the `kommander` namespace it propagates to **all** workspaces.
 
 `add-catalog-to-cluster.sh` wraps step 5 (and verifies the resulting `OCIRepository`).

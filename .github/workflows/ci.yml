@@ -94,7 +94,7 @@ jobs:
           helm repo add hashicorp https://helm.releases.hashicorp.com >/dev/null
           helm repo update >/dev/null
           helm pull hashicorp/vault --version 0.34.1
-          helm push vault-0.34.1.tgz oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog
+          helm push vault-0.34.1.tgz oci://ghcr.io/fernandoquinino-ntx/vault
 
       - name: Build + push catalog bundle (optional)
         if: ${{ vars.NKP_BINARY_URL != '' }}
@@ -103,7 +103,7 @@ jobs:
           nkp create catalog-bundle --collection-tag "${GITHUB_REF_NAME}"
           tar=$(ls -1 nkp-app-catalog-*.tar | head -1)
           nkp push bundle "$tar" \
-            --to-registry oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog \
+            --to-registry oci://ghcr.io/fernandoquinino-ntx \
             --to-registry-username "${{ github.actor }}" \
             --to-registry-password "${{ secrets.GITHUB_TOKEN }}"
 
@@ -111,5 +111,5 @@ jobs:
         run: |
           echo "Register the catalog in an NKP workspace:"
           echo "  nkp create catalog-collection \\"
-          echo "    --url oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog/nkp-app-catalog/collection \\"
+          echo "    --url oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog/collection \\"
           echo "    --tag ${GITHUB_REF_NAME} --workspace kommander-workspace"

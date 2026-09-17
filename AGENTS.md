@@ -29,11 +29,11 @@ applications/<app>/<version>/
 ./catalog-workflow.sh add-app --appname <name> --version <ver> --ocirepo oci://<registry>/<chart>
 # chart in a Helm repo → pull + push to OCI first
 ./catalog-workflow.sh add-app --appname <name> --version <ver> \
-  --helmrepo <repo/chart> --ocipush oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog \
+  --helmrepo <repo/chart> --ocipush oci://ghcr.io/fernandoquinino-ntx/charts \
   --helmrepo-url https://<helm-repo-url>
 ```
 Then edit `metadata.yaml`, `./catalog-workflow.sh validate`, `./catalog-workflow.sh build-push --tag vX.Y.Z`.
 
 ## Registry
-OCI: `oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog`. Charts land under `<registry>/<chart>`;
-the collection bundle under `<registry>/nkp-app-catalog/collection`.
+OCI: charts go to a chart namespace (`oci://ghcr.io/fernandoquinino-ntx/<chartdir>/<chart>`, e.g. `.../vault/vault`);
+the collection bundle under `oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog/collection`.

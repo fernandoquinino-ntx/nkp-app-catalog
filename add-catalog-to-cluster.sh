@@ -4,7 +4,7 @@
 #
 # Usage:
 #   ./add-catalog-to-cluster.sh [--workspace kommander-workspace] [--tag v0.1.0]
-#       [--url oci://ghcr.io/<org>/nkp-app-catalog/nkp-app-catalog/collection]
+#       [--url oci://ghcr.io/<org>/nkp-app-catalog/collection]
 #       [--namespace <ws-ns>] [--kubeconfig <path>] [--nkp nkp] [--dry-run]
 #
 # Notes:
@@ -12,7 +12,7 @@
 #   - The OCI registry must be reachable by the cluster; public GHCR packages need no secret.
 set -euo pipefail
 
-REGISTRY_DEFAULT="oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog"
+REGISTRY_DEFAULT="oci://ghcr.io/fernandoquinino-ntx"
 WS="kommander-workspace"; TAG=""; URL=""; NS=""; KUBECONFIG_ARG=""; NKP="${NKP:-nkp}"; DRY=0
 
 while [ $# -gt 0 ]; do

@@ -5,7 +5,7 @@
 # Env (or .env.local):
 #   GHCR_USERNAME   registry user (github login)
 #   GHCR_PASSWORD   PAT with write:packages (+ delete:packages for MAKE_PUBLIC)
-#   REGISTRY        default oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog
+#   REGISTRY        default oci://ghcr.io/fernandoquinino-ntx   (collection -> <REGISTRY>/nkp-app-catalog/collection)
 #   COLLECTION      default <REGISTRY>/nkp-app-catalog/collection
 #   MAKE_PUBLIC     "true" to flip the pushed GHCR packages to public
 set -euo pipefail
@@ -23,7 +23,7 @@ command -v "$NKP" >/dev/null || { echo "nkp CLI not found (set NKP=<path>)" >&2;
 : "${GHCR_USERNAME:?set GHCR_USERNAME (or .env.local)}"
 : "${GHCR_PASSWORD:?set GHCR_PASSWORD (PAT with write:packages) }"
 
-REGISTRY="${REGISTRY:-oci://ghcr.io/fernandoquinino-ntx/nkp-app-catalog}"
+REGISTRY="${REGISTRY:-oci://ghcr.io/fernandoquinino-ntx}"
 COLLECTION="${COLLECTION:-${REGISTRY}/nkp-app-catalog/collection}"
 
 echo "== 1/4  validate =="
