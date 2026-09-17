@@ -32,6 +32,9 @@ GHCR_USERNAME=<you> GHCR_PASSWORD=<PAT> ./catalog-workflow.sh build-push --tag v
 
 ## Adding an application
 
+> **Full, phase-by-phase plan** (plan → scaffold → metadata → values → validate → push chart →
+> bundle → make public → commit/tag → onboard → deploy → verify): **[`docs/ADD-NEW-APP.md`](docs/ADD-NEW-APP.md)**.
+
 ```bash
 # Helm chart already published in OCI
 ./catalog-workflow.sh add-app --appname <name> --version <ver> --ocirepo oci://<registry>/<path>/<chart>
