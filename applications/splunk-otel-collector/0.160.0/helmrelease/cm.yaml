@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${releaseName}-config-defaults
+  namespace: ${releaseNamespace}
+data:
+  values.yaml: |
+    # Splunk OpenTelemetry Collector for Kubernetes — portable defaults.
+    #
+    # EDIT-ME at deploy time (Kommander UI override, or here):
+    #   * clusterName                     -> the NKP/Kommander cluster name (required, non-empty)
+    #   * splunkPlatform.endpoint         -> https://<stack>.splunkcloud.com:8088/services/collector/event
+    #   * splunkPlatform.index            -> an index ALLOWED by the HEC token (Splunk Cloud:
+    #                                        Settings > Data inputs > HTTP Event Collector > token,
+    #                                        "Selected Allowed Indexes"). An unallowed index returns
+    #                                        HTTP 400 "Incorrect index" and the collector SILENTLY
+    #                                        drops every event (pods still look Ready).
+    #   * the HEC token                   -> prefer a Secret <releaseName>-hec (key: token);
+    #                                        otherwise set splunkPlatform.token below.
+    #
+    # TLS: the Splunk Cloud HEC endpoint serves CN=SplunkServerDefaultCert (issuer SplunkCommonCA),
+    # which is NOT publicly trusted, so insecureSkipVerify must stay true unless you trust that CA.
+
+    # NOTE: the chart's values.schema.json requires clusterName and splunkPlatform.token to be
+    # NON-EMPTY, so these are explicit placeholders — you MUST override them (or supply the
+    # <releaseName>-hec Secret for the token) before real traffic flows.
+
+    clusterName: "EDIT-ME-CLUSTER-NAME"
+
+    splunkPlatform:
+      endpoint: "https://CHANGEME.splunkcloud.com:8088/services/collector/event"
+      token: "EDIT-ME-HEC-TOKEN"
+      index: "main"
+      metricsIndex: ""
+      source: kubernetes
+      logsEnabled: true
+      metricsEnabled: false
+      tracesEnabled: false
+      insecureSkipVerify: true
+
+    # Log parity with NKP's two Fluent Bits: container logs (agent default) + host journald + audit.
+    logsCollection:
+      containers:
+        enabled: true
+      journald:
+        enabled: true
+        directory: /var/log/journal
+        units:
+          - name: kubelet
+            priority: info
+          - name: containerd
+            priority: info
+          - name: docker
+            priority: info
+          - name: sshd
+            priority: info
+          - name: systemd-journald
+            priority: info
+      extraFileLogs:
+        filelog/nkp-audit:
+          include:
+            - /var/log/kubernetes/audit/*.log
+          start_at: end
+          include_file_path: true
+          include_file_name: false
+          resource:
+            com.splunk.source: /var/log/kubernetes/audit
+            com.splunk.sourcetype: kube:apiserver-audit
+            host.name: 'EXPR(env("K8S_NODE_NAME"))'
+
+    agent:
+      enabled: true
+      # Mount the NKP kube-apiserver audit directory (DirectoryOrCreate avoids errors on workers).
+      extraVolumes:
+        - name: nkp-audit
+          hostPath:
+            path: /var/log/kubernetes/audit
+            type: DirectoryOrCreate
+      extraVolumeMounts:
+        - name: nkp-audit
+          mountPath: /var/log/kubernetes/audit
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 512Mi
+
+    # Cluster receiver is only needed for Kubernetes metrics/events.
+    # Set clusterReceiver.enabled: true together with splunkPlatform.metricsEnabled: true.
+    clusterReceiver:
+      enabled: false
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 500Mi

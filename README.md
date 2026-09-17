@@ -9,6 +9,7 @@ as a **catalog collection** (a Flux `OCIRepository` in a workspace).
 | Category | Apps |
 |---|---|
 | **Security / Secrets** | **Vault** — HashiCorp Vault, HA Raft (`hashicorp/vault` chart 0.34.1) |
+| **Observability / Logging** | **Splunk OpenTelemetry Collector** — pod + host logs (and optional metrics) → Splunk Cloud HEC (`splunk-otel-collector` chart 0.160.0) |
 
 ## Prerequisites
 

@@ -43,7 +43,8 @@ else
 fi
 
 echo "== 4/4  push bundle =="
-"$NKP" push bundle "$TAR" \
+"$NKP" push bundle \
+  --bundle "$TAR" \
   --to-registry "$REGISTRY" \
   --to-registry-username "$GHCR_USERNAME" \
   --to-registry-password "$GHCR_PASSWORD"

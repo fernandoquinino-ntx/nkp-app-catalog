@@ -1,0 +1,49 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: ${releaseName}-chart
+  namespace: ${releaseNamespace}
+spec:
+  interval: 6h0m0s
+  ref:
+    tag: 0.160.0
+  url: oci://ghcr.io/fernandoquinino-ntx/splunk-otel-collector/splunk-otel-collector
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: splunk-otel-collector
+  namespace: ${releaseNamespace}
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: ${releaseName}-chart
+    namespace: ${releaseNamespace}
+  install:
+    crds: CreateReplace
+    createNamespace: true
+    remediation:
+      retries: 30
+  interval: 15s
+  targetNamespace: splunk-otel
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 30
+  valuesFrom:
+    # Portable defaults (endpoint / index / collection scope). See cm.yaml.
+    - kind: ConfigMap
+      name: ${releaseName}-config-defaults
+    # RECOMMENDED: keep the HEC token out of the AppDeployment config in a Secret
+    # named <releaseName>-hec in the workspace namespace, with key `token`:
+    #
+    #   kubectl -n <workspaceNamespace> create secret generic <releaseName>-hec \
+    #     --from-literal=token='<HEC-TOKEN>'
+    #
+    # Optional, so a deploy still succeeds without it (then set splunkPlatform.token
+    # in the ConfigMap / Kommander override instead).
+    - kind: Secret
+      name: ${releaseName}-hec
+      valuesKey: token
+      targetPath: splunkPlatform.token
+      optional: true

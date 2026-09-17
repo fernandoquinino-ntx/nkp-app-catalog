@@ -1,0 +1,42 @@
+schema: catalog.nkp.nutanix.com/v1/application-metadata
+displayName: Splunk OpenTelemetry Collector
+allowMultipleInstances: false
+category:
+  - nkp-app-catalog
+  - observability
+  - logging
+  - infrastructure
+description: |
+  Splunk OpenTelemetry Collector for Kubernetes ships pod/container logs and host logs
+  (kube-apiserver audit + systemd/journal) to Splunk Cloud via the HTTP Event Collector (HEC),
+  using Splunk's OpenTelemetry-native collector. It runs as a DaemonSet and leaves any existing
+  Loki / Fluent Bit logging path untouched.
+dependencies: []
+icon: https://avatars.githubusercontent.com/u/8184587?s=200&v=4
+licensing: []
+overview: |
+  **What it is** — Splunk's OpenTelemetry Collector for Kubernetes (chart `splunk-otel-collector`)
+  collects Kubernetes logs — and optionally cluster metrics/events — and exports them to Splunk
+  Platform over HEC.
+
+  **Highlights**
+  - DaemonSet agent: container logs + host `journald` + kube-apiserver audit → Splunk HEC
+  - **Dual-ship**: it collects from node sources; it does not replace or scrape Loki / Fluent Bit
+  - Optional cluster receiver for Kubernetes metrics/events (`splunkPlatform.metricsEnabled: true`)
+  - One deployment per cluster; set a unique `clusterName` so Splunk can filter per cluster
+
+  **Set these when you deploy it**
+  - `clusterName` — the NKP/Kommander cluster name (the chart requires a non-empty value, so the
+    default is an `EDIT-ME-…` placeholder — set it per cluster)
+  - `splunkPlatform.endpoint` — `https://<stack>.splunkcloud.com:8088/services/collector/event`
+  - `splunkPlatform.index` — **must be an index the HEC token allows** (Splunk Cloud enforces the
+    token's *Selected Allowed Indexes*; an unallowed index returns `HTTP 400 "Incorrect index"` and
+    the collector silently drops every event)
+  - the HEC **token** — recommended via a `Secret` named `<releaseName>-hec` (key `token`) so it is
+    not stored in the AppDeployment config
+
+  **Documentation:** [Splunk OTel Collector for Kubernetes](https://help.splunk.com/en/splunk-cloud-platform/get-started/splunk-validated-architectures/getting-data-in-forwarding-and-preprocessing/splunk-opentelemetry-collector-for-kubernetes) | **Chart:** [signalfx/splunk-otel-collector-chart](https://github.com/signalfx/splunk-otel-collector-chart)
+scope:
+  - workspace
+supportLink: https://github.com/signalfx/splunk-otel-collector-chart
+type: custom
