@@ -11,7 +11,8 @@ description: |
   certificates, API keys, and other secrets. Deployed here in HA Raft mode with the UI
   enabled, it provides encryption as a service, dynamic secrets, PKI, and audit logging.
 dependencies: []
-icon: https://raw.githubusercontent.com/hashicorp/vault/main/website/static/img/vault-symbol.svg
+# base64-encoded SVG (simple-icons vault) — the NKP schema documents `icon` as base64 SVG
+icon: "PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+VmF1bHQ8L3RpdGxlPjxwYXRoIGQ9Ik0wIDBsMTEuOTU1IDI0TDI0IDB6bTEzLjM2NiA0LjgyN2gxLjM5M3YxLjM4aC0xLjM5M3ptLTIuNzcgNS41NjlIOS4yMlY4Ljk5M2gxLjM4OXptMC0yLjA4N0g5LjIyVjYuOTA2aDEuMzg5em0wLTIuMDg2SDkuMjJWNC44MTloMS4zODl6bTIuMDg3IDYuMjYzaC0xLjM3N1YxMS4wOGgxLjM4OHptMC0yLjA5aC0xLjM3N1Y4Ljk5M2gxLjM4OHptMC0yLjA4N2gtMS4zNzdWNi45MDZoMS4zODh6bTAtMi4wODZoLTEuMzc3VjQuODE5aDEuMzg4em0uNjgzLjY4M2gxLjM5M3YxLjM4OWgtMS4zOTN6bTAgMy40NzVWOC45OTNoMS4zODl2MS4zODhaIi8+PC9zdmc+"
 licensing:
   - Pro
   - Ultimate
