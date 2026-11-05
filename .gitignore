@@ -11,3 +11,8 @@ bundle/
 .DS_Store
 .idea/
 .vscode/
+
+# opencode machine state (per-repo AI config lives in the private <repo>-ai repo;
+# `oc` points opencode at ~/ai-config/nkp-app-catalog/{config,rag}.json)
+.opencode/
+opencode-rag.json
