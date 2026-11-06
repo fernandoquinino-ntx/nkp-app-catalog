@@ -11,3 +11,15 @@ bundle/
 .DS_Store
 .idea/
 .vscode/
+
+# --- ai config lives outside this repo (never commit) ---
+opencode.json
+opencode.jsonc
+opencode-rag.json
+*-rag.json
+.opencode/agent/
+.opencode/command/
+.opencode/templates/
+.opencode/rag_db/
+.opencode/rag_db.bak.*/
+.opencode/*.log

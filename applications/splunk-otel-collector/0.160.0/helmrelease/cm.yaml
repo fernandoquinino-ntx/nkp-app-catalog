@@ -38,26 +38,27 @@ data:
       tracesEnabled: false
       insecureSkipVerify: true
 
-    # Log parity with NKP's two Fluent Bits: container logs (agent default) + host journald + audit.
+    # Log parity with NKP's two Fluent Bits:
+    #   * container logs  = the chart's default container collection
+    #   * host logs       = ONE catch-all journald receiver (all units + kernel), configured
+    #                       under agent.config below, instead of the chart's narrow 5-unit list.
+    #     (NKP's host Fluent Bit reads the whole journal AND /dev/kmsg, so a unit-filtered
+    #      receiver would silently miss most host services and all kernel messages.)
     logsCollection:
       containers:
         enabled: true
+      # journald.units is intentionally EMPTY: it is replaced by the catch-all journald/all
+      # receiver in agent.config. The chart only generates one receiver per listed unit and
+      # has no "all units" mode.
       journald:
         enabled: true
         directory: /var/log/journal
-        units:
-          - name: kubelet
-            priority: info
-          - name: containerd
-            priority: info
-          - name: docker
-            priority: info
-          - name: sshd
-            priority: info
-          - name: systemd-journald
-            priority: info
+        units: []
       extraFileLogs:
-        filelog/nkp-audit:
+        # NOTE: the chart renamed the filelog receiver to `file_log`; the key IS the receiver
+        # name, so it must be `file_log/...` (a legacy `filelog/...` key still works but the
+        # chart's validator rejects that name in agent.config overrides).
+        file_log/nkp-audit:
           include:
             - /var/log/kubernetes/audit/*.log
           start_at: end
@@ -70,6 +71,61 @@ data:
 
     agent:
       enabled: true
+      # Full host-log parity: a single journald receiver with NO units/identifiers/matches
+      # filter reads the entire journal (systemd units + kernel via _TRANSPORT=kernel).
+      # Sourcetypes: kube:journald:<unit> for units, kube:kernel for kernel messages.
+      config:
+        receivers:
+          # kubelet (cAdvisor) metrics are pulled from https://${K8S_NODE_IP}:10250.
+          # The kubelet serving certificate usually has no IP SAN, so default CA
+          # verification fails ("x509: cannot validate certificate ... doesn't contain
+          # any IP SANs") and the receiver silently scrapes NOTHING (0 points, no drops).
+          # insecure_skip_verify is the documented fix; use ca_file instead if you
+          # prefer to trust the kubelet CA.
+          kubelet_stats:
+            insecure_skip_verify: true
+          journald/all:
+            directory: /var/log/journal
+            priority: info
+            retry_on_failure:
+              enabled: true
+            storage: file_storage
+            operators:
+              - type: add
+                field: resource["com.splunk.source"]
+                value: /var/log/journal
+              - type: add
+                field: resource["com.splunk.sourcetype"]
+                value: 'EXPR("kube:journald:"+body._SYSTEMD_UNIT)'
+                if: 'body._SYSTEMD_UNIT != nil'
+              - type: add
+                field: resource["com.splunk.sourcetype"]
+                value: kube:kernel
+                if: 'body._SYSTEMD_UNIT == nil'
+              - type: add
+                field: resource["com.splunk.index"]
+                value: k8s_logs
+              - type: add
+                field: resource["host.name"]
+                value: 'EXPR(env("K8S_NODE_NAME"))'
+              - type: add
+                field: resource["journald.priority.number"]
+                value: 'EXPR(body.PRIORITY)'
+              - type: add
+                field: resource["journald.unit.name"]
+                value: 'EXPR(body._SYSTEMD_UNIT)'
+              - type: move
+                id: set-body
+                from: body.MESSAGE
+                to: body
+        service:
+          pipelines:
+            # Redefine the list to attach the catch-all journald receiver (lists are replaced,
+            # not merged, so the audit receiver must be listed explicitly).
+            logs/host:
+              receivers:
+                - file_log/nkp-audit
+                - journald/all
       # Mount the NKP kube-apiserver audit directory (DirectoryOrCreate avoids errors on workers).
       extraVolumes:
         - name: nkp-audit
